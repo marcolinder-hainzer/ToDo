@@ -75,13 +75,18 @@ async function createUser(body: Record<string, unknown>) {
   const isAdmin = body.isAdmin === true;
   const mustChange = body.mustChangePassword !== false;
 
+  const email = `${name}@${EMAIL_DOMAIN}`;
+  // The database only accepts new accounts that were invited here (blocks self sign-up).
+  const { error: inviteError } = await admin.from('user_invites').upsert({ email, created_at: new Date().toISOString() });
+  if (inviteError) throw inviteError;
   const { data, error } = await admin.auth.admin.createUser({
-    email: `${name}@${EMAIL_DOMAIN}`,
+    email,
     password: pw,
     email_confirm: true,
     user_metadata: { username: name, display_name: display, must_change_password: mustChange },
   });
   if (error) {
+    await admin.from('user_invites').delete().eq('email', email);
     if (/already|exists|registered/i.test(error.message)) throw new HttpError(409, 'Dieser Benutzername ist bereits vergeben');
     throw new HttpError(400, `Benutzer konnte nicht angelegt werden: ${error.message}`);
   }

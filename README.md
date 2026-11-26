@@ -51,6 +51,8 @@ Den Access Token anschließend im Supabase-Dashboard wieder löschen.
 3. **Authentication → Sign In / Providers:** „Allow new users to sign up“ **aus**, bei *Email* „Confirm email“ **aus**.
 4. **Authentication → Users → Add user:** E-Mail `marco@todo.local`, ein Passwort, „Auto Confirm User“ an.
    Der erste Benutzer wird automatisch Administrator. (Der Benutzername ist der Teil vor dem @.)
+   Alle weiteren Benutzer legst du danach in der App unter *Benutzer* an – die Datenbank nimmt nur noch
+   Konten an, die dort freigegeben wurden.
 5. **Edge Functions → Deploy a new function → Via Editor:** je eine Funktion `admin-users` und `send-reminders`
    mit dem Code aus `supabase/functions/<name>/index.ts` anlegen und bei beiden **„Verify JWT“ ausschalten**.
 6. **Edge Functions → Secrets:** `CRON_SECRET` (beliebige lange Zufallszeichenfolge), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
@@ -82,7 +84,9 @@ im Supabase-Dashboard unter *Authentication → Users* beim Benutzer „Reset pa
 
 ## Sicherheit
 
-- Anmeldung über Supabase Auth (Passwörter werden mit bcrypt gespeichert), keine Selbstregistrierung
+- Anmeldung über Supabase Auth (Passwörter werden mit bcrypt gespeichert)
+- Keine Selbstregistrierung: Die Datenbank nimmt nur Konten an, die ein Admin in der App angelegt hat
+  (zusätzlich zur Einstellung „Allow new users to sign up“ im Dashboard)
 - **Row Level Security** auf allen Tabellen: Jede Abfrage liefert nur Zeilen des angemeldeten Benutzers –
   auch wer die öffentlichen Schlüssel aus `config.js` kennt, kommt ohne Anmeldung an keine Daten
 - Bilder in einem **privaten** Speicher-Bucket, jeder Benutzer nur in seinem eigenen Ordner; Anzeige über zeitlich

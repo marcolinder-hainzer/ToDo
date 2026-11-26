@@ -74,6 +74,12 @@ create table if not exists public.todo_images (
 );
 create index if not exists todo_images_todo_idx on public.todo_images (todo_id);
 
+-- Vom Admin freigegebene Konten (nur die Edge Function "admin-users" kann hier schreiben).
+create table if not exists public.user_invites (
+  email      text primary key,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.push_subscriptions (
   id         bigint generated always as identity primary key,
   user_id    uuid not null references auth.users (id) on delete cascade,
@@ -88,10 +94,19 @@ create index if not exists push_subscriptions_user_idx on public.push_subscripti
 -- Trigger-Funktionen
 -- -----------------------------------------------------------------------------
 
--- Neues Konto (angelegt vom Admin) -> Profil. Der allererste Benutzer wird Administrator.
+-- Neues Konto -> Profil. Der allererste Benutzer wird Administrator.
+-- Danach werden nur Konten angenommen, die ein Admin über die App angelegt hat (Eintrag in user_invites);
+-- eine Selbstregistrierung ist damit auch dann unmöglich, wenn sie in den Auth-Einstellungen aktiv wäre.
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
+  if exists (select 1 from public.profiles) then
+    delete from public.user_invites
+     where email = lower(new.email) and created_at > now() - interval '10 minutes';
+    if not found then
+      raise exception 'Registrierung ist deaktiviert' using errcode = '42501';
+    end if;
+  end if;
   insert into public.profiles (id, username, display_name, is_admin, must_change_password)
   values (
     new.id,
@@ -239,6 +254,8 @@ $$;
 -- -----------------------------------------------------------------------------
 
 revoke all on public.profiles, public.projects, public.todos, public.todo_images, public.push_subscriptions from anon;
+revoke all on public.user_invites from anon, authenticated;
+grant all on public.user_invites to service_role;
 
 revoke insert, update, delete on public.profiles from authenticated;
 grant select on public.profiles to authenticated;
@@ -267,6 +284,7 @@ alter table public.projects enable row level security;
 alter table public.todos enable row level security;
 alter table public.todo_images enable row level security;
 alter table public.push_subscriptions enable row level security;
+alter table public.user_invites enable row level security; -- keine Policies: nur service_role
 
 drop policy if exists "profiles: read own" on public.profiles;
 create policy "profiles: read own" on public.profiles

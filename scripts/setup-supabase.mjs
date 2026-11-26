@@ -6,6 +6,8 @@
 // Schritte: Projekt anlegen (falls nötig) -> Datenbank (supabase/schema.sql) -> Anmeldung konfigurieren
 // -> Edge Functions + Secrets -> Erinnerungs-Cronjob -> Admin-Konto -> public/config.js schreiben.
 // Das Skript kann erneut ausgeführt werden; bestehende Daten bleiben erhalten.
+// Erzeugte Geheimnisse (VAPID-Schlüssel, Cron-Secret) liegen lokal in .supabase-setup.json – fehlt die Datei,
+// werden neue erzeugt und Geräte müssen Push-Benachrichtigungen einmal neu aktivieren.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -67,8 +69,8 @@ async function findOrCreateProject() {
   const { data: projects } = await api('GET', '/v1/projects');
   const existing = projects.find((p) => p.name === opts.name);
   if (existing) {
-    log(`Projekt „${opts.name}“ existiert bereits (${existing.id})`);
-    return existing.id;
+    log(`Projekt „${opts.name}“ existiert bereits (${existing.ref || existing.id})`);
+    return existing.ref || existing.id;
   }
   const { data: orgs } = await api('GET', '/v1/organizations');
   if (!orgs?.length) throw new Error('Keine Supabase-Organisation gefunden – bitte im Dashboard eine anlegen.');
@@ -77,13 +79,15 @@ async function findOrCreateProject() {
   const dbPass = random(24);
   const { data: created } = await api('POST', '/v1/projects', {
     name: opts.name,
-    organization_id: org.id,
-    region: opts.region,
+    organization_slug: org.slug || org.id,
+    region_selection: { type: 'specific', code: opts.region },
     db_pass: dbPass,
+    auth_site_url: opts.site,
   });
   state.dbPassword = dbPass;
+  state.ref = created.ref || created.id;
   saveState();
-  return created.id || created.ref;
+  return state.ref;
 }
 
 async function waitUntilReady(ref) {
@@ -173,15 +177,21 @@ async function main() {
   await sqlWhenReady(ref, fs.readFileSync(path.join(root, 'supabase/schema.sql'), 'utf8'));
   log('Datenbank, Zugriffsregeln und Bildspeicher eingerichtet');
 
-  await api('PATCH', `/v1/projects/${ref}/config/auth`, {
-    disable_signup: true,
-    external_email_enabled: true,
-    mailer_autoconfirm: true,
-    password_min_length: 8,
-    site_url: opts.site,
-    uri_allow_list: opts.site,
-  });
-  log('Anmeldung konfiguriert (keine Selbstregistrierung, Passwort min. 8 Zeichen)');
+  try {
+    await api('PATCH', `/v1/projects/${ref}/config/auth`, {
+      disable_signup: true,
+      external_email_enabled: true,
+      mailer_autoconfirm: true,
+      password_min_length: 8,
+      site_url: opts.site,
+      uri_allow_list: opts.site,
+    });
+    log('Anmeldung konfiguriert (keine Selbstregistrierung, Passwort min. 8 Zeichen)');
+  } catch (err) {
+    // Selbstregistrierung ist zusätzlich in der Datenbank gesperrt (siehe handle_new_user in schema.sql).
+    log(`Hinweis: Auth-Einstellungen konnten nicht gesetzt werden (${err.message.slice(0, 120)}) – bitte im Dashboard „Allow new users to sign up“ ausschalten`);
+    state.authConfigPending = true;
+  }
 
   const keys = await apiKeys(ref);
   state.ref = ref;

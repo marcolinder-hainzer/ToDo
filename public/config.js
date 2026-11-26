@@ -8,8 +8,8 @@
  *  loginDomain     Interne Domain, aus "marco" wird "marco@todo.local" (nicht ändern, wenn schon Benutzer existieren)
  */
 window.TODO_CONFIG = {
-  supabaseUrl: '',
-  supabaseKey: '',
-  vapidPublicKey: '',
+  supabaseUrl: 'https://hwobeeiahjmtiikdllwn.supabase.co',
+  supabaseKey: 'sb_publishable_XlfFrLk3YVuD_iAvDGvvEQ_-mWqGS51',
+  vapidPublicKey: 'BNaYWKnEtkuKMlkaoZ6rYQYe0DkJsRpdI6rTdgb3SVRkYsmSoqKY4z0WY-2U-BeJMkosf8actMQkUDZI_zSYkmA',
   loginDomain: 'todo.local',
 };
