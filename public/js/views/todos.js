@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { listTodos } from '../data.js';
 import { todoItem } from '../components/todoItem.js';
 import { todoSections } from '../components/todoSections.js';
 import { h, icon, debounce } from '../dom.js';
@@ -87,12 +87,8 @@ export async function todosView(root, { setTitle, setNewTodoDefaults }) {
   );
 
   async function load() {
-    const params = new URLSearchParams({ status: filters.status });
-    if (filters.area) params.set('area', filters.area);
-    if (filters.project) params.set('project', filters.project);
-    if (filters.q.trim()) params.set('q', filters.q.trim());
     try {
-      const todos = await api.get(`/api/todos?${params}`);
+      const todos = await listTodos({ status: filters.status, area: filters.area, project: filters.project, q: filters.q, limit: filters.status === 'open' ? 2000 : 500 });
       summary.textContent = `${todos.length} ${todos.length === 1 ? 'Todo' : 'Todos'}`;
       if (!todos.length) {
         results.replaceChildren(

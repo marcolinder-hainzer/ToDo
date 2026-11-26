@@ -1,4 +1,4 @@
-import { api } from './api.js';
+import { listProjects } from './data.js';
 import { todayStr } from './dates.js';
 
 export const AREAS = {
@@ -19,7 +19,7 @@ export const store = {
 };
 
 export async function loadProjects() {
-  store.projects = await api.get(`/api/projects?today=${todayStr()}`);
+  store.projects = await listProjects(todayStr());
   window.dispatchEvent(new CustomEvent('projects:changed'));
   return store.projects;
 }

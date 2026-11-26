@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { createProject, updateProject } from '../data.js';
 import { h, icon } from '../dom.js';
 import { AREAS, loadProjects, notifyChanged } from '../store.js';
 import { errorToast, field, openDialog, segmented, setBusy, toast } from '../ui.js';
@@ -72,7 +72,7 @@ export function openProjectEditor({ project = null, defaults = {} } = {}) {
           const payload = { name, description: descInput.value, area: state.area, color: state.color };
           setBusy(saveBtn, true);
           try {
-            result = project ? await api.patch(`/api/projects/${project.id}`, payload) : await api.post('/api/projects', payload);
+            result = project ? await updateProject(project.id, payload) : await createProject(payload);
             await loadProjects();
             notifyChanged();
             toast(project ? 'Projekt gespeichert' : 'Projekt angelegt', { type: 'success' });

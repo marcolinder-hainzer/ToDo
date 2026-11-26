@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { adminUsers } from '../data.js';
 import { formatDateTime } from '../dates.js';
 import { h, icon } from '../dom.js';
 import { store } from '../store.js';
@@ -45,7 +45,7 @@ function openUserDialog(onSaved) {
         e.preventDefault();
         setBusy(save, true);
         try {
-          await api.post('/api/users', {
+          await adminUsers.create({
             username: username.value.trim(),
             displayName: displayName.value.trim(),
             password: pw.input.value,
@@ -85,7 +85,7 @@ function openResetDialog(user, onSaved) {
         e.preventDefault();
         setBusy(save, true);
         try {
-          await api.patch(`/api/users/${user.id}`, { password: pw.input.value, mustChangePassword: mustChange.checked });
+          await adminUsers.update(user.id, { password: pw.input.value, mustChangePassword: mustChange.checked });
           toast(`Passwort für „${user.username}“ gesetzt`, { type: 'success' });
           dialog.close();
           onSaved();
@@ -126,7 +126,7 @@ export async function usersView(root, { setTitle, setNewTodoDefaults }) {
   async function load() {
     let users;
     try {
-      users = await api.get('/api/users');
+      users = await adminUsers.list();
     } catch (err) {
       errorToast(err);
       return;
@@ -156,7 +156,7 @@ export async function usersView(root, { setTitle, setNewTodoDefaults }) {
                   type: 'button',
                   onclick: async () => {
                     try {
-                      await api.patch(`/api/users/${u.id}`, { isAdmin: !u.isAdmin });
+                      await adminUsers.update(u.id, { isAdmin: !u.isAdmin });
                       toast(u.isAdmin ? 'Admin-Rechte entzogen' : 'Zum Administrator gemacht');
                       load();
                     } catch (err) {
@@ -180,7 +180,7 @@ export async function usersView(root, { setTitle, setNewTodoDefaults }) {
                     });
                     if (!ok) return;
                     try {
-                      await api.del(`/api/users/${u.id}`);
+                      await adminUsers.remove(u.id);
                       toast('Benutzer gelöscht');
                       load();
                     } catch (err) {

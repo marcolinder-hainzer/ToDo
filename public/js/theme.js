@@ -25,3 +25,7 @@ export const DEFAULT_THEME = window.__todoTheme.DEFAULT;
 export function applyTheme(theme) {
   window.__todoTheme.apply(theme);
 }
+
+export function sanitizeTheme(theme) {
+  return window.__todoTheme.sanitize(theme);
+}

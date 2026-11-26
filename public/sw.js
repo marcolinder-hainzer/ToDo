@@ -16,21 +16,21 @@ self.addEventListener('push', (event) => {
       tag: data.tag || undefined,
       renotify: !!data.tag,
       requireInteraction: true,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/badge-96.png',
-      data: { url: data.url || '/' },
+      icon: 'icons/icon-192.png',
+      badge: 'icons/badge-96.png',
+      data: { url: data.url || './' },
     }),
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || '/', self.location.origin);
+  const target = new URL(event.notification.data?.url || './', self.registration.scope);
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const client of windows) {
-        if (new URL(client.url).origin === self.location.origin) {
+        if (client.url.startsWith(self.registration.scope)) {
           client.postMessage({ type: 'navigate', hash: target.hash || '#/' });
           return client.focus();
         }

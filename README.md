@@ -1,182 +1,117 @@
 # ToDo – Beruf & Privat
 
-Eine persönliche, selbst gehostete Todo-App, in der berufliche und private Aufgaben sauber getrennt sind.
-Läuft im Browser auf PC, Tablet und Handy und lässt sich wie eine App auf dem Home-Bildschirm installieren.
+Eine persönliche Todo-App, in der berufliche und private Aufgaben sauber getrennt sind.
+Sie läuft im Browser unter **https://marcolinder-hainzer.github.io/ToDo/** und lässt sich auf PC, Tablet
+und Handy wie eine App installieren.
+
+- **Oberfläche:** liegt auf **GitHub Pages** (kostenlos, wird bei jeder Änderung automatisch veröffentlicht)
+- **Daten & Anmeldung:** liegen bei **Supabase** (kostenloser Tarif, Rechenzentrum Frankfurt).
+  Jeder Benutzer sieht ausschließlich seine eigenen Todos – das erzwingt die Datenbank selbst.
 
 ## Funktionen
 
 - **Zwei Bereiche: Beruflich & Privat** – überall klar getrennt und farblich unterscheidbar
-- **Übersicht (Startseite)** – pro Bereich drei Abschnitte:
-  - **Überfällig** – Fälligkeitsdatum ist überschritten
-  - **Anstehend** – mit Fälligkeitsdatum, gruppiert nach *Heute*, *Morgen*, *Nächste 7 Tage*, *Diesen Monat*, *Später*
-  - **Allgemein** – Todos ohne Datum
-  - Umschaltbar: *Beides*, nur *Beruflich* oder nur *Privat*
-  - Schnelleingabe direkt in jeder Spalte
-- **Projekte** – pro Bereich, mit Farbe, Beschreibung, Fortschrittsbalken; archivieren oder löschen
-- **Todos** mit
-  - Titel und kurzer Beschreibung
-  - Fälligkeitsdatum (optional mit Uhrzeit) und Schnellauswahl (Heute, Morgen, Nächste Woche)
-  - **Erinnerung** zu einem frei wählbaren Zeitpunkt (Schnellauswahl z. B. „1 Tag vorher“)
-  - Priorität (Niedrig / Normal / Hoch)
-  - **Bildern** – hochladen, per Drag & Drop oder Strg+V einfügen, auf dem Handy direkt mit der Kamera;
-    große Fotos werden vor dem Upload automatisch verkleinert
-- **Erinnerungen**
-  - Glocke mit Zähler in der App; Aktionen *Erledigt*, *+10 Min.*, *+1 Std.*, *Morgen 9:00*, *Ausblenden*
-  - **Push-Benachrichtigungen** aufs Handy/den PC, auch wenn die App geschlossen ist (benötigt HTTPS)
-- **Alle Todos** – Suche (auch mit Umlauten), Filter nach Bereich, Projekt und Status (offen/erledigt)
-- **Farben anpassen** – Hell/Dunkel/System, 8 Farbschemata, eigene Farben für Akzent, Beruflich und Privat,
-  Hintergrundfarbe, Schriftgröße. Wird pro Benutzer gespeichert und gilt auf allen Geräten.
-- **Sicherheit & Benutzer**
-  - Anmeldung mit Benutzername und Passwort – es gibt **keine** Selbstregistrierung
-  - Nur Administratoren (du, Marco) können Benutzer anlegen, Passwörter zurücksetzen oder löschen
-  - Jeder Benutzer sieht ausschließlich seine eigenen Todos, Projekte und Bilder
+- **Übersicht:** pro Bereich **Überfällig**, **Anstehend** (Heute, Morgen, Nächste 7 Tage …) und **Allgemein** (ohne Datum);
+  umschaltbar zwischen *Beides*, *Beruflich*, *Privat*; Schnelleingabe in jeder Spalte
+- **Projekte** pro Bereich mit Farbe, Beschreibung, Fortschritt; archivieren oder löschen
+- **Todos** mit Beschreibung, Fälligkeitsdatum (+ Uhrzeit), **Erinnerung**, Priorität und **Bildern**
+  (Kamera, Drag & Drop, Strg+V; große Fotos werden automatisch verkleinert)
+- **Erinnerungen:** Glocke in der App + **Push-Benachrichtigungen** aufs Handy/den PC, auch wenn die App geschlossen ist
+- **Alle Todos:** Suche, Filter nach Bereich, Projekt und Status
+- **Farben anpassen:** Hell/Dunkel/System, 8 Farbschemata, eigene Farben, Hintergrund, Schriftgröße (pro Benutzer gespeichert)
+- **Benutzer:** keine Selbstregistrierung – nur Administratoren legen Benutzer an, setzen Passwörter zurück oder löschen sie
 - Tastenkürzel: **N** = neues Todo, **Strg+Enter** = speichern
 
-## Schnellstart
+## Auf den Geräten installieren
 
-Voraussetzung: **Node.js 22.13 oder neuer** (die Datenbank SQLite ist in Node eingebaut – keine weitere Software nötig).
+- **Android / Chrome / Edge:** Adresse öffnen → Menü → „App installieren“
+- **iPhone / iPad:** in **Safari** öffnen → „Teilen“ → „Zum Home-Bildschirm“, danach die App vom Home-Bildschirm starten
+- Danach in der App unter **Einstellungen → Benachrichtigungen** auf jedem Gerät „Auf diesem Gerät aktivieren“ tippen
+
+## Einrichtung
+
+### A) Automatisch (empfohlen)
+
+Mit einem Supabase-Zugangsschlüssel (Access Token) richtet das Skript alles ein:
 
 ```bash
 npm install
-npm start
+SUPABASE_ACCESS_TOKEN=sbp_... npm run setup:supabase
 ```
 
-Beim **ersten Start** wird das Administrator-Konto `marco` angelegt und das Start-Passwort in der Konsole angezeigt:
+Es legt das Projekt in Frankfurt an, richtet Datenbank, Zugriffsregeln, Bildspeicher, Anmeldung,
+Edge Functions und den Erinnerungs-Cronjob ein, erstellt das Admin-Konto `marco` (Start-Passwort wird angezeigt)
+und trägt die Verbindungsdaten in `public/config.js` ein. Danach `public/config.js` committen und pushen.
+Den Access Token anschließend im Supabase-Dashboard wieder löschen.
 
-```
-==========================================
-  Administrator-Konto wurde angelegt:
-    Benutzername: marco
-    Passwort:     xYz…
-  Bitte nach der ersten Anmeldung ändern (wird erzwungen).
-==========================================
-```
+### B) Von Hand im Supabase-Dashboard
 
-Öffne <http://localhost:3000>, melde dich an und vergib ein eigenes Passwort.
-Alternativ kannst du das Start-Passwort vorgeben: `ADMIN_PASSWORD=... npm start` (oder in der `.env`).
+1. Auf [supabase.com](https://supabase.com) ein **neues Projekt** anlegen (Region *Frankfurt*, Free-Tarif).
+2. **SQL Editor** → Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen → *Run*.
+3. **Authentication → Sign In / Providers:** „Allow new users to sign up“ **aus**, bei *Email* „Confirm email“ **aus**.
+4. **Authentication → Users → Add user:** E-Mail `marco@todo.local`, ein Passwort, „Auto Confirm User“ an.
+   Der erste Benutzer wird automatisch Administrator. (Der Benutzername ist der Teil vor dem @.)
+5. **Edge Functions → Deploy a new function → Via Editor:** je eine Funktion `admin-users` und `send-reminders`
+   mit dem Code aus `supabase/functions/<name>/index.ts` anlegen und bei beiden **„Verify JWT“ ausschalten**.
+6. **Edge Functions → Secrets:** `CRON_SECRET` (beliebige lange Zufallszeichenfolge), `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
+   (erzeugen mit `npx web-push generate-vapid-keys`) und `VAPID_SUBJECT` (z. B. `mailto:du@example.com`).
+7. **SQL Editor** → [`supabase/cron.sql`](supabase/cron.sql) mit eingesetzter Projekt-URL und `CRON_SECRET` ausführen.
+8. **Project Settings → API Keys:** Projekt-URL und *Publishable key* sowie den VAPID-Public-Key in
+   [`public/config.js`](public/config.js) eintragen, committen und pushen.
 
-### Mit Docker
+### GitHub Pages einschalten (einmalig)
 
-```bash
-docker compose up -d --build
-docker compose logs todo     # zeigt das Start-Passwort
-```
-
-Die Daten liegen im Docker-Volume `todo-data`.
-
-## Im Internet bzw. auf dem Handy nutzen (HTTPS)
-
-Für die Nutzung außerhalb deines Heimnetzes und für Push-Benachrichtigungen braucht die App **HTTPS**.
-Am einfachsten mit [Caddy](https://caddyserver.com) als Reverse-Proxy (holt das Zertifikat automatisch):
-
-```caddyfile
-todo.deine-domain.de {
-    reverse_proxy localhost:3000
-}
-```
-
-Und in der `.env` der App:
-
-```ini
-TRUST_PROXY=true
-COOKIE_SECURE=true
-VAPID_SUBJECT=mailto:du@deine-domain.de
-```
-
-### Als App installieren & Benachrichtigungen
-
-- **Android / Chrome / Edge:** Menü → „App installieren“ bzw. „Zum Startbildschirm hinzufügen“.
-- **iPhone / iPad (ab iOS 16.4):** In Safari öffnen → „Teilen“ → „Zum Home-Bildschirm“. Die App von dort starten.
-- Danach unter **Einstellungen → Benachrichtigungen → „Auf diesem Gerät aktivieren“**.
-  Mit „Test senden“ prüfst du, ob alles ankommt. Das geht für jedes Gerät einzeln.
-
-Ohne HTTPS funktionieren Erinnerungen trotzdem – sie erscheinen dann in der App (Glocke oben rechts),
-solange die App geöffnet ist.
+Repository → **Settings → Pages → Build and deployment → Source: „GitHub Actions“**.
+Ab dann veröffentlicht der Workflow [`.github/workflows/pages.yml`](.github/workflows/pages.yml) den Ordner `public/`
+bei jeder Änderung automatisch.
 
 ## Benutzer verwalten
 
-Als Administrator findest du in der Seitenleiste **Benutzer**:
+Als Administrator in der Seitenleiste **Benutzer**: neue Benutzer anlegen (mit Start-Passwort, das bei der ersten
+Anmeldung geändert werden muss), Passwörter zurücksetzen, Admin-Rechte vergeben/entziehen, Benutzer löschen
+(inkl. aller Todos, Projekte und Bilder). Ein Administrator kann die Todos anderer Benutzer **nicht** sehen.
 
-- **Neuer Benutzer** – Benutzername, Anzeigename, Start-Passwort (mit Generator).
-  Standardmäßig muss der Benutzer das Passwort bei der ersten Anmeldung ändern.
-- **Passwort** zurücksetzen (meldet den Benutzer auf allen Geräten ab)
-- **Zum Admin** machen bzw. Rechte entziehen (mindestens ein Admin bleibt immer erhalten)
-- **Löschen** – entfernt den Benutzer mit allen Todos, Projekten und Bildern
+**Passwort vergessen?** Ein anderer Admin setzt es unter *Benutzer* zurück. Als einziger Admin:
+im Supabase-Dashboard unter *Authentication → Users* beim Benutzer „Reset password“ bzw. ein neues Passwort setzen.
 
-### Passwort vergessen?
+## Hinweise zum kostenlosen Supabase-Tarif
 
-Auf dem Server (im Projektordner):
+- 500 MB Datenbank und 1 GB Dateispeicher – für eine persönliche Todo-App mehr als genug.
+- Wird das Projekt **eine Woche lang nicht benutzt**, pausiert Supabase es (mit E-Mail-Warnung vorher).
+  Im Dashboard mit einem Klick wieder starten; bei regelmäßiger Nutzung passiert das nicht.
 
-```bash
-npm run reset-password -- marco                    # erzeugt ein neues Zufallspasswort
-npm run reset-password -- marco MeinNeuesPasswort  # setzt ein bestimmtes Passwort
-```
+## Sicherheit
 
-Mit Docker: `docker compose exec todo node --disable-warning=ExperimentalWarning scripts/reset-password.js marco`
-
-## Datensicherung
-
-Alles liegt im Ordner `data/` (bzw. im Docker-Volume):
-
-- `todo.db` – Datenbank (Benutzer, Projekte, Todos, Einstellungen)
-- `uploads/` – hochgeladene Bilder
-
-Für ein Backup die App kurz stoppen und den gesamten Ordner kopieren.
-
-## Konfiguration
-
-Alle Einstellungen per Umgebungsvariable oder in einer `.env`-Datei (Vorlage: `.env.example`).
-
-| Variable             | Standard                     | Bedeutung                                                         |
-| -------------------- | ---------------------------- | ----------------------------------------------------------------- |
-| `PORT`               | `3000`                       | Port der App                                                      |
-| `HOST`               | `0.0.0.0`                    | Netzwerk-Adresse                                                  |
-| `DATA_DIR`           | `./data`                     | Ordner für Datenbank und Bilder                                   |
-| `ADMIN_USERNAME`     | `marco`                      | Benutzername des ersten Admins (nur beim ersten Start)            |
-| `ADMIN_DISPLAY_NAME` | aus Benutzername             | Anzeigename des ersten Admins                                     |
-| `ADMIN_PASSWORD`     | zufällig                     | Start-Passwort des ersten Admins                                  |
-| `TRUST_PROXY`        | `false`                      | `true` hinter Reverse-Proxy (HTTPS & echte IP erkennen)           |
-| `COOKIE_SECURE`      | `auto`                       | `true` = Cookie nur über HTTPS + HSTS                             |
-| `VAPID_SUBJECT`      | `mailto:admin@example.com`   | Kontaktadresse für Push-Dienste                                   |
-| `SESSION_DAYS`       | `30`                         | Gültigkeit einer Anmeldung (verlängert sich bei Nutzung)          |
-| `MAX_UPLOAD_MB`      | `15`                         | Maximale Bildgröße                                                |
-| `ALLOWED_ORIGINS`    | –                            | Zusätzliche erlaubte Origins (kommagetrennt), selten nötig        |
-
-## Sicherheit im Überblick
-
-- Passwörter mit **scrypt** gehasht (eigenes Salt pro Benutzer), Vergleich in konstanter Zeit
-- Sitzungen über zufälliges Token in einem **HttpOnly-/SameSite-Cookie**; in der Datenbank liegt nur dessen Hash
-- **CSRF-Schutz**: Sitzungs-Token im Header + Prüfung der Herkunft (Origin) jeder ändernden Anfrage
-- **Login-Sperre** nach wiederholten Fehlversuchen (pro Benutzername und IP, 15 Minuten)
-- Passwortwechsel bzw. -reset meldet alle anderen Geräte ab; „Andere Geräte abmelden“ in den Einstellungen
-- Strikte **Content-Security-Policy** und weitere Sicherheits-Header (helmet); Inhalte werden nie als HTML eingefügt
-- **Uploads**: Bildtyp wird anhand des Dateiinhalts geprüft (kein SVG), zufällige Dateinamen,
-  Bilder nur für den Besitzer abrufbar
-- Strikte Trennung der Daten: jede Abfrage ist auf den angemeldeten Benutzer beschränkt
+- Anmeldung über Supabase Auth (Passwörter werden mit bcrypt gespeichert), keine Selbstregistrierung
+- **Row Level Security** auf allen Tabellen: Jede Abfrage liefert nur Zeilen des angemeldeten Benutzers –
+  auch wer die öffentlichen Schlüssel aus `config.js` kennt, kommt ohne Anmeldung an keine Daten
+- Bilder in einem **privaten** Speicher-Bucket, jeder Benutzer nur in seinem eigenen Ordner; Anzeige über zeitlich
+  begrenzte Links; Bildtyp wird anhand des Dateiinhalts geprüft (kein SVG)
+- Benutzerverwaltung nur über die Edge Function `admin-users`, die Admin-Rechte serverseitig prüft
+- Passwortänderung erfordert das aktuelle Passwort und meldet alle anderen Geräte ab
+- Strikte Content-Security-Policy; Inhalte werden nie als HTML eingefügt
 
 ## Entwicklung
 
 ```bash
-npm run dev    # Neustart bei Code-Änderungen
-npm test       # API- und Sicherheitstests (starten einen Server mit Test-Datenbank)
+npm install
+npm run dev        # http://localhost:5173/ToDo/ (bildet GitHub Pages nach)
+npm run vendor     # aktualisiert public/vendor/supabase.js nach einem Update von @supabase/supabase-js
 ```
 
-Aufbau:
-
 ```
-server/            Express-Backend
-  index.js         Start, erstes Admin-Konto
-  app.js           Middleware, Sicherheits-Header, Routen
-  auth.js          Passwörter, Sitzungen, CSRF, Login-Sperre
-  db.js            SQLite-Schema & Migrationen
-  push.js          Web-Push (VAPID-Schlüssel werden automatisch erzeugt)
-  reminders.js     Prüft alle 30 s fällige Erinnerungen
-  routes/          API-Endpunkte
-public/            Frontend (ohne Build-Schritt)
-  js/views/        Seiten: Übersicht, Todos, Projekte, Einstellungen, Benutzer, Login
-  js/components/   Todo-Editor, Erinnerungen, Bildbetrachter …
-  css/app.css      Design (Farben über CSS-Variablen anpassbar)
-  sw.js            Service Worker für Push-Benachrichtigungen
-scripts/           reset-password.js
-test/              Automatisierte Tests
+public/                 die komplette App (wird auf GitHub Pages veröffentlicht)
+  config.js             Verbindung zu Supabase (öffentliche Werte)
+  js/data.js            Datenzugriff (Auth, Datenbank, Bilder, Edge Functions)
+  js/views/             Seiten: Übersicht, Todos, Projekte, Einstellungen, Benutzer, Login
+  js/components/        Todo-Editor, Erinnerungen, Bildbetrachter …
+  sw.js                 Service Worker für Push-Benachrichtigungen
+supabase/
+  schema.sql            Tabellen, Zugriffsregeln (RLS), Bildspeicher
+  cron.sql              Erinnerungs-Cronjob
+  functions/            Edge Functions: admin-users, send-reminders
+scripts/
+  setup-supabase.mjs    automatische Einrichtung über die Supabase Management API
+  serve.mjs             lokaler Testserver
+.github/workflows/      automatische Veröffentlichung auf GitHub Pages
 ```

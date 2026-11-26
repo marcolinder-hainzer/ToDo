@@ -1,23 +1,19 @@
 {
   "name": "todo-app",
-  "version": "1.0.0",
-  "description": "Persönliche ToDo-App für Beruf & Privat mit Projekten, Erinnerungen, Bildern und Benutzerverwaltung",
+  "version": "2.0.0",
+  "description": "Persönliche ToDo-App für Beruf & Privat – statisch auf GitHub Pages, Daten bei Supabase",
   "private": true,
   "type": "module",
-  "main": "server/index.js",
   "engines": {
-    "node": ">=22.13"
+    "node": ">=20"
   },
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning server/index.js",
-    "dev": "node --disable-warning=ExperimentalWarning --watch server/index.js",
-    "reset-password": "node --disable-warning=ExperimentalWarning scripts/reset-password.js",
-    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.js"
+    "dev": "node scripts/serve.mjs",
+    "vendor": "node scripts/vendor.mjs",
+    "setup:supabase": "node scripts/setup-supabase.mjs"
   },
-  "dependencies": {
-    "express": "^5.3.0",
-    "helmet": "^8.3.0",
-    "multer": "^2.5.0",
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.119.2",
     "web-push": "^4.0.0"
   }
 }

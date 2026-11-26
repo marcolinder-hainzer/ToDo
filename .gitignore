@@ -1,5 +1,5 @@
 node_modules/
-data/
 .env
+.supabase-setup.json
 *.log
 .DS_Store

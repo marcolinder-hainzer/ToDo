@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { createTodo, deleteImage, deleteTodo, getTodo, updateTodo, uploadImages as uploadImageFiles } from '../data.js';
 import { addDays, formatDateTime, fromLocalInput, toDateStr, toLocalInput, todayStr } from '../dates.js';
 import { h, icon } from '../dom.js';
 import { AREAS, PRIORITIES, loadProjects, notifyChanged, projectById, store } from '../store.js';
@@ -30,15 +30,7 @@ async function prepareImage(file) {
   }
 }
 
-async function uploadImages(todoId, files) {
-  const uploaded = [];
-  for (let i = 0; i < files.length; i += 10) {
-    const form = new FormData();
-    for (const f of files.slice(i, i + 10)) form.append('images', f, f.name || 'bild.jpg');
-    uploaded.push(...(await api.upload(`/api/todos/${todoId}/images`, form)));
-  }
-  return uploaded;
-}
+const uploadImages = (todoId, files) => uploadImageFiles(todoId, files);
 
 function nextMonday() {
   const d = new Date();
@@ -60,7 +52,7 @@ function atTime(date, hours, minutes = 0) {
 export async function openTodoEditor({ id = null, defaults = {}, onClose } = {}) {
   let todo = null;
   try {
-    if (id) todo = await api.get(`/api/todos/${id}`);
+    if (id) todo = await getTodo(id);
     if (!store.projects.length) await loadProjects();
   } catch (err) {
     errorToast(err);
@@ -322,7 +314,7 @@ export async function openTodoEditor({ id = null, defaults = {}, onClose } = {})
     const { ok } = await confirmDialog({ title: 'Bild löschen?', message: img.originalName, confirmLabel: 'Löschen' });
     if (!ok) return;
     try {
-      await api.del(`/api/images/${img.id}`);
+      await deleteImage(img);
       images = images.filter((i) => i.id !== img.id);
       imagesChanged = true;
       renderThumbs();
@@ -367,7 +359,7 @@ export async function openTodoEditor({ id = null, defaults = {}, onClose } = {})
           });
           if (!ok) return;
           try {
-            await api.del(`/api/todos/${todo.id}`);
+            await deleteTodo(todo.id);
             dirty = false;
             imagesChanged = false;
             dialog.close();
@@ -405,9 +397,9 @@ export async function openTodoEditor({ id = null, defaults = {}, onClose } = {})
     try {
       let saved;
       if (todo) {
-        saved = await api.patch(`/api/todos/${todo.id}`, payload);
+        saved = await updateTodo(todo.id, payload);
       } else {
-        saved = await api.post('/api/todos', payload);
+        saved = await createTodo(payload);
         todo = saved;
         if (pending.length) {
           try {

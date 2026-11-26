@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { updateTodo } from '../data.js';
 import { daysFromToday, formatDateTime, formatDue, formatDueLong, formatReminder, isOverdue } from '../dates.js';
 import { h, icon } from '../dom.js';
 import { AREAS, notifyChanged, projectById } from '../store.js';
@@ -6,15 +6,14 @@ import { errorToast, toast } from '../ui.js';
 import { openTodoEditor } from './todoEditor.js';
 
 export async function toggleCompleted(todo, completed) {
-  await api.patch(`/api/todos/${todo.id}`, { completed });
+  await updateTodo(todo.id, { completed });
   if (completed) {
     toast(`„${todo.title}“ erledigt`, {
       type: 'success',
       action: {
         label: 'Rückgängig',
         onClick: () =>
-          api
-            .patch(`/api/todos/${todo.id}`, { completed: false })
+          updateTodo(todo.id, { completed: false })
             .then(notifyChanged)
             .catch(errorToast),
       },

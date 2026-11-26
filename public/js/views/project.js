@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { deleteProject, listTodos, updateProject } from '../data.js';
 import { openProjectEditor } from '../components/projectEditor.js';
 import { openTodoEditor } from '../components/todoEditor.js';
 import { todoItem } from '../components/todoItem.js';
@@ -27,8 +27,8 @@ export async function projectView(root, { params, setTitle, setNewTodoDefaults, 
         return;
       }
       [open, done] = await Promise.all([
-        api.get(`/api/todos?status=open&project=${projectId}`),
-        api.get(`/api/todos?status=done&project=${projectId}&limit=200`),
+        listTodos({ status: 'open', project: projectId }),
+        listTodos({ status: 'done', project: projectId, limit: 200 }),
       ]);
     } catch (err) {
       errorToast(err);
@@ -65,7 +65,7 @@ export async function projectView(root, { params, setTitle, setNewTodoDefaults, 
               type: 'button',
               onclick: async () => {
                 try {
-                  await api.patch(`/api/projects/${project.id}`, { archived: !project.archived });
+                  await updateProject(project.id, { archived: !project.archived });
                   toast(project.archived ? 'Projekt wiederhergestellt' : 'Projekt archiviert');
                   await loadProjects();
                   notifyChanged();
@@ -90,7 +90,7 @@ export async function projectView(root, { params, setTitle, setNewTodoDefaults, 
                 });
                 if (!ok) return;
                 try {
-                  await api.del(`/api/projects/${project.id}${checked ? '?deleteTodos=1' : ''}`);
+                  await deleteProject(project.id, { deleteTodos: checked });
                   toast('Projekt gelöscht');
                   await loadProjects();
                   navigate('#/projects');

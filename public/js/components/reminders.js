@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { listDueReminders, updateTodo } from '../data.js';
 import { addDays, formatReminder } from '../dates.js';
 import { h, icon } from '../dom.js';
 import { AREAS, notifyChanged, projectById, store } from '../store.js';
@@ -49,7 +49,7 @@ function updateBells() {
 async function poll() {
   if (!store.user || store.user.mustChangePassword) return;
   try {
-    due = await api.get('/api/reminders');
+    due = await listDueReminders();
   } catch {
     return;
   }
@@ -73,7 +73,7 @@ async function poll() {
     for (const t of fresh) {
       if (notified.has(keyOf(t))) continue;
       notified.add(keyOf(t));
-      showLocalNotification(t.title, { body: `${AREAS[t.area].label} · Erinnerung`, tag: `todo-${t.id}`, data: { url: `/#/todo/${t.id}` } }).catch(() => {});
+      showLocalNotification(t.title, { body: `${AREAS[t.area].label} · Erinnerung`, tag: `todo-${t.id}`, data: { url: `#/todo/${t.id}` } }).catch(() => {});
     }
     saveNotified(notified);
   }
@@ -102,8 +102,8 @@ export function stopReminderPolling() {
 async function act(todo, action) {
   try {
     if (action === 'done') await toggleCompleted(todo, true);
-    else if (action === 'dismiss') await api.patch(`/api/todos/${todo.id}`, { reminderDismissed: true });
-    else await api.patch(`/api/todos/${todo.id}`, { reminderAt: action.toISOString() });
+    else if (action === 'dismiss') await updateTodo(todo.id, { reminderDismissed: true });
+    else await updateTodo(todo.id, { reminderAt: action.toISOString() });
     if (action instanceof Date) toast(`Erinnerung verschoben auf ${formatReminder(action.toISOString())}`);
     notifyChanged();
     await poll();

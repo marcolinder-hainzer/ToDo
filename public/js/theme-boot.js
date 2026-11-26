@@ -1,5 +1,13 @@
 /* Wird synchron im <head> geladen, damit das gespeicherte Farbschema ohne Flackern greift. */
 (function () {
+  if (window.top !== window.self) {
+    try {
+      window.top.location = window.self.location.href;
+    } catch (e) {
+      document.documentElement.style.display = 'none';
+    }
+  }
+
   var DEFAULT = {
     mode: 'system',
     preset: 'standard',
@@ -26,8 +34,22 @@
   var media = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
   var current = null;
 
+  var HEX = /^#[0-9a-fA-F]{6}$/;
+  function sanitize(theme) {
+    var t = Object.assign({}, DEFAULT);
+    if (!theme || typeof theme !== 'object') return t;
+    if (['system', 'light', 'dark'].indexOf(theme.mode) >= 0) t.mode = theme.mode;
+    if (['small', 'normal', 'large'].indexOf(theme.fontSize) >= 0) t.fontSize = theme.fontSize;
+    if (typeof theme.preset === 'string') t.preset = theme.preset.slice(0, 30);
+    ['accent', 'work', 'private'].forEach(function (k) {
+      if (HEX.test(theme[k])) t[k] = theme[k].toLowerCase();
+    });
+    t.background = HEX.test(theme.background) ? theme.background.toLowerCase() : null;
+    return t;
+  }
+
   function apply(theme) {
-    var t = Object.assign({}, DEFAULT, theme || {});
+    var t = sanitize(theme);
     current = t;
     var root = document.documentElement;
     var dark;
@@ -61,7 +83,7 @@
     });
   }
 
-  window.__todoTheme = { apply: apply, DEFAULT: DEFAULT, luminance: luminance };
+  window.__todoTheme = { apply: apply, sanitize: sanitize, DEFAULT: DEFAULT, luminance: luminance };
 
   var stored = null;
   try {

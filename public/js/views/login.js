@@ -1,4 +1,4 @@
-import { api, setCsrfToken } from '../api.js';
+import { changePassword, login } from '../data.js';
 import { h, icon } from '../dom.js';
 import { field, passwordInput, setBusy } from '../ui.js';
 
@@ -9,7 +9,7 @@ function authCard(...children) {
     h(
       'div',
       { class: 'auth-card' },
-      h('div', { class: 'auth-brand' }, h('img', { src: '/icons/icon.svg', alt: '', class: 'auth-logo' }), h('span', 'ToDo')),
+      h('div', { class: 'auth-brand' }, h('img', { src: 'icons/icon.svg', alt: '', class: 'auth-logo' }), h('span', 'ToDo')),
       ...children,
     ),
   );
@@ -30,9 +30,8 @@ export function renderLogin(root, onSuccess) {
         error.hidden = true;
         setBusy(submit, true);
         try {
-          const res = await api.post('/api/auth/login', { username: username.value.trim(), password: password.input.value });
-          setCsrfToken(res.csrfToken);
-          onSuccess(res.user);
+          const user = await login(username.value, password.input.value);
+          onSuccess(user);
         } catch (err) {
           error.textContent = err.message;
           error.hidden = false;
@@ -75,8 +74,8 @@ export function renderPasswordChange(root, user, onSuccess, onLogout) {
         }
         setBusy(submit, true);
         try {
-          const res = await api.post('/api/auth/password', { currentPassword: current.input.value, newPassword: next.input.value });
-          onSuccess(res.user);
+          const user = await changePassword(current.input.value, next.input.value);
+          onSuccess(user);
         } catch (err) {
           error.textContent = err.message;
           error.hidden = false;

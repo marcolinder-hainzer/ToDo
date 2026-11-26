@@ -1,4 +1,4 @@
-import { api } from '../api.js';
+import { createTodo, listTodos, saveSettings } from '../data.js';
 import { todoSections, counts } from '../components/todoSections.js';
 import { formatFullDate, greeting } from '../dates.js';
 import { h, icon } from '../dom.js';
@@ -23,7 +23,7 @@ function quickAdd(area) {
         if (!title) return;
         input.disabled = true;
         try {
-          await api.post('/api/todos', { title, area });
+          await createTodo({ title, area });
           input.value = '';
           toast('Todo hinzugefügt', { type: 'success', duration: 2000 });
           notifyChanged();
@@ -85,7 +85,7 @@ export async function dashboardView(root, { setTitle, setNewTodoDefaults }) {
       areaFilter = value;
       setNewTodoDefaults({ area: value === 'both' ? 'work' : value });
       store.settings.dashboardArea = value;
-      api.put('/api/settings', { dashboardArea: value }).catch(() => {});
+      saveSettings({ dashboardArea: value }).catch(() => {});
       render();
     },
     { name: 'Bereich anzeigen' },
@@ -110,7 +110,7 @@ export async function dashboardView(root, { setTitle, setNewTodoDefaults }) {
 
   async function load() {
     try {
-      todos = await api.get('/api/todos?status=open');
+      todos = await listTodos({ status: 'open' });
       render();
     } catch (err) {
       errorToast(err);

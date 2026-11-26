@@ -1,5 +1,5 @@
-import { api, setCsrfToken } from './api.js';
 import { createReminderBell, startReminderPolling, stopReminderPolling } from './components/reminders.js';
+import { currentUser, getSettings, isConfigured, logout as signOut, onSessionLost } from './data.js';
 import { openTodoEditor } from './components/todoEditor.js';
 import { h, icon } from './dom.js';
 import { detachPushSubscription, registerServiceWorker, syncPushSubscription } from './push.js';
@@ -54,7 +54,7 @@ function buildShell() {
   const sidebar = h(
     'aside',
     { class: 'sidebar', id: 'sidebar', 'aria-label': 'Navigation' },
-    h('a', { class: 'brand', href: '#/' }, h('img', { src: '/icons/icon.svg', alt: '' }), h('span', 'ToDo')),
+    h('a', { class: 'brand', href: '#/' }, h('img', { src: 'icons/icon.svg', alt: '' }), h('span', 'ToDo')),
     h(
       'nav',
       { class: 'nav' },
@@ -254,9 +254,16 @@ function showPasswordChange() {
 
 async function logout() {
   await detachPushSubscription();
-  await api.post('/api/auth/logout').catch(() => {});
+  await signOut();
   store.user = null;
-  location.replace('/');
+  location.replace(location.pathname);
+}
+
+function sessionLost() {
+  if (!store.user) return;
+  store.user = null;
+  document.querySelectorAll('dialog[open]').forEach((d) => d.close());
+  showLogin('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
 }
 
 function installGlobalListeners() {
@@ -264,12 +271,13 @@ function installGlobalListeners() {
   listenersInstalled = true;
   window.addEventListener('hashchange', route);
   window.addEventListener('data:changed', onDataChanged);
-  window.addEventListener('auth:expired', () => {
-    if (store.user) {
-      store.user = null;
-      document.querySelectorAll('dialog').forEach((d) => d.close());
-      showLogin('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.');
-    }
+  window.addEventListener('auth:expired', sessionLost);
+  onSessionLost(sessionLost);
+  // Changes made on another device show up when the app comes back to the foreground.
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) hiddenAt = Date.now();
+    else if (shell && Date.now() - hiddenAt > 15_000) window.dispatchEvent(new CustomEvent('data:changed'));
   });
   window.addEventListener('auth:password-required', () => {
     if (store.user) {
@@ -298,9 +306,9 @@ async function startApp(user) {
   installGlobalListeners();
   if (user.mustChangePassword) return showPasswordChange();
   try {
-    const [settings] = await Promise.all([api.get('/api/settings'), loadProjects()]);
-    store.settings = settings;
-    applyTheme(settings.theme);
+    store.settings = getSettings();
+    applyTheme(store.settings.theme);
+    await loadProjects();
   } catch (err) {
     if (err.status === 401) return showLogin();
     return showFatal(err);
@@ -326,19 +334,33 @@ function showFatal(err) {
   );
 }
 
+function showNotConfigured() {
+  root.replaceChildren(
+    h(
+      'div',
+      { class: 'auth-wrap' },
+      h(
+        'div',
+        { class: 'auth-card' },
+        emptyState('sliders', 'Noch nicht eingerichtet', 'Die App ist noch nicht mit der Datenbank (Supabase) verbunden. Trage Projekt-URL und Schlüssel in config.js ein.'),
+      ),
+    ),
+  );
+}
+
 async function boot() {
+  if (!isConfigured) return showNotConfigured();
   registerServiceWorker();
   try {
-    const me = await api.get('/api/auth/me');
-    setCsrfToken(me.csrfToken);
-    await startApp(me.user);
-  } catch (err) {
-    if (err.status === 401) {
+    const user = await currentUser();
+    if (user) {
+      await startApp(user);
+    } else {
       installGlobalListeners();
       showLogin();
-    } else {
-      showFatal(err);
     }
+  } catch (err) {
+    showFatal(err);
   }
 }
 

@@ -1,19 +1,12 @@
-import { api } from '../api.js';
-import { formatDateTime } from '../dates.js';
+import { changePassword, logoutOtherDevices, saveSettings, sendTestPush, updateDisplayName } from '../data.js';
 import { debounce, h, icon } from '../dom.js';
 import { disablePush, enablePush, getPushState } from '../push.js';
 import { store } from '../store.js';
-import { BACKGROUNDS, DEFAULT_THEME, PRESETS, applyTheme } from '../theme.js';
+import { BACKGROUNDS, DEFAULT_THEME, PRESETS, applyTheme, sanitizeTheme } from '../theme.js';
 import { errorToast, field, passwordInput, segmented, setBusy, toast } from '../ui.js';
 
 function card(title, iconName, ...children) {
   return h('section', { class: 'card settings-card' }, h('h2', { class: 'card-title' }, icon(iconName), title), ...children);
-}
-
-function describeDevice(ua = '') {
-  const browser = /Edg\//.test(ua) ? 'Edge' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Browser';
-  const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : '';
-  return [browser, os].filter(Boolean).join(' auf ');
 }
 
 // ---------------------------------------------------------------------------
@@ -25,7 +18,7 @@ function appearanceCard() {
 
   const persist = debounce(async () => {
     try {
-      store.settings = await api.put('/api/settings', { theme });
+      store.settings = await saveSettings({ theme: sanitizeTheme(theme) });
       status.textContent = 'Gespeichert ✓';
     } catch (err) {
       status.textContent = '';
@@ -183,6 +176,8 @@ function notificationsCard() {
       if (isIos && !standalone) {
         items.push(h('p', { class: 'muted' }, 'Auf iPhone/iPad: Öffne die Seite in Safari, tippe auf „Teilen“ → „Zum Home-Bildschirm“ und starte die App von dort. Dann kannst du hier Benachrichtigungen aktivieren.'));
       }
+    } else if (!s.configured) {
+      items.push(status('warn', 'Push-Benachrichtigungen sind für diese App noch nicht eingerichtet.'));
     } else if (!s.secure) {
       items.push(status('warn', 'Push-Benachrichtigungen benötigen eine sichere Verbindung (HTTPS).'));
     } else if (s.permission === 'denied') {
@@ -199,7 +194,7 @@ function notificationsCard() {
       test.addEventListener('click', async () => {
         setBusy(test, true);
         try {
-          const r = await api.post('/api/push/test');
+          const r = await sendTestPush();
           toast(r.sent ? 'Test-Benachrichtigung gesendet' : 'Senden fehlgeschlagen – bitte erneut aktivieren', { type: r.sent ? 'success' : 'error' });
         } catch (err) {
           errorToast(err);
@@ -243,8 +238,7 @@ function accountCard(onUserChanged) {
         e.preventDefault();
         setBusy(nameBtn, true);
         try {
-          const res = await api.put('/api/auth/profile', { displayName: nameInput.value });
-          store.user = res.user;
+          store.user = await updateDisplayName(nameInput.value);
           onUserChanged();
           toast('Name gespeichert', { type: 'success' });
         } catch (err) {
@@ -271,10 +265,9 @@ function accountCard(onUserChanged) {
         if (next.input.value !== repeat.input.value) return toast('Die neuen Passwörter stimmen nicht überein', { type: 'error' });
         setBusy(pwBtn, true);
         try {
-          await api.post('/api/auth/password', { currentPassword: current.input.value, newPassword: next.input.value });
+          store.user = await changePassword(current.input.value, next.input.value);
           pwForm.reset();
           toast('Passwort geändert – andere Geräte wurden abgemeldet', { type: 'success' });
-          renderSessions();
         } catch (err) {
           errorToast(err);
         } finally {
@@ -288,46 +281,33 @@ function accountCard(onUserChanged) {
     h('div', { class: 'row' }, pwBtn),
   );
 
-  const sessions = h('div', { class: 'stack' });
-  async function renderSessions() {
-    try {
-      const list = await api.get('/api/auth/sessions');
-      const others = list.filter((s) => !s.current).length;
-      const logoutOthers = h(
-        'button',
-        {
-          class: 'btn btn-ghost',
-          type: 'button',
-          disabled: !others,
-          onclick: async () => {
-            await api.post('/api/auth/logout-others').catch(errorToast);
-            toast('Alle anderen Geräte wurden abgemeldet');
-            renderSessions();
-          },
-        },
-        icon('logout'),
-        'Andere Geräte abmelden',
-      );
-      sessions.replaceChildren(
-        h('h3', { class: 'subhead' }, 'Angemeldete Geräte'),
-        h(
-          'ul',
-          { class: 'session-list' },
-          list.map((s) =>
-            h(
-              'li',
-              icon('monitorSmartphone'),
-              h('div', h('strong', describeDevice(s.userAgent)), s.current && h('span', { class: 'badge badge-accent' }, 'Dieses Gerät'), h('div', { class: 'muted small' }, `Zuletzt aktiv ${formatDateTime(s.lastSeenAt)}`)),
-            ),
-          ),
-        ),
-        h('div', { class: 'row' }, logoutOthers),
-      );
-    } catch (err) {
-      errorToast(err);
-    }
-  }
-  renderSessions();
+  const logoutOthers = h(
+    'button',
+    {
+      class: 'btn btn-ghost',
+      type: 'button',
+      onclick: async () => {
+        setBusy(logoutOthers, true);
+        try {
+          await logoutOtherDevices();
+          toast('Alle anderen Geräte wurden abgemeldet', { type: 'success' });
+        } catch (err) {
+          errorToast(err);
+        } finally {
+          setBusy(logoutOthers, false);
+        }
+      },
+    },
+    icon('logout'),
+    'Auf allen anderen Geräten abmelden',
+  );
+  const sessions = h(
+    'div',
+    { class: 'stack' },
+    h('h3', { class: 'subhead' }, 'Geräte'),
+    h('p', { class: 'muted' }, 'Handy verloren oder an einem fremden PC angemeldet? Hier beendest du alle anderen Anmeldungen.'),
+    h('div', { class: 'row' }, logoutOthers),
+  );
 
   return card(
     'Konto',
